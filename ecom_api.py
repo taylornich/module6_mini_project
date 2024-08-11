@@ -135,10 +135,9 @@ def delete_customer(customer_id):
 def create_customer_account():
     try:
         data = request.json
-        hashed_password = generate_password_hash(data['password'], method='sha256')
         new_account = CustomerAccount(
             username=data['username'],
-            password=hashed_password,
+            password=data['password'],
             customer_id=data['customer_id']
         )
         db.session.add(new_account)
@@ -264,7 +263,6 @@ def place_order():
         items = data['items']
         order_date = datetime.datetime.utcnow()
 
-        # Create new order
         new_order = Order(order_date=order_date, customer_id=customer_id)
         db.session.add(new_order)
         db.session.commit()
@@ -316,10 +314,8 @@ def track_order(order_id):
         order = Order.query.get_or_404(order_id)
         order_schema = OrderSchema()
         result = order_schema.dump(order)
-        # Assuming we want to show tracking info such as order status here
         return jsonify({
             'order': result,
-            'status': 'In Progress',  # Placeholder status; ideally, you would have an actual status field
             'expected_delivery': (order.order_date + datetime.timedelta(days=7)).isoformat()
         }), 200
     except Exception as e:
@@ -329,9 +325,7 @@ def track_order(order_id):
 @app.route('/orders', methods=['GET'])
 def list_orders():
     try:
-        # Retrieve all orders from the database
         orders = Order.query.all()
-        # Serialize the orders using OrderSchema
         order_schema = OrderSchema(many=True)
         result = order_schema.dump(orders)
         return jsonify(result), 200
